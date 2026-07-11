@@ -2,6 +2,43 @@ const STORAGE_KEY = 'modo-urbano-appointments';
 const BLOCK_KEY = 'modo-urbano-blocks';
 const USER_KEY = 'modo-urbano-user';
 const ADMIN_PIN = '150815';
+const API_URL = window.location.origin + '/api/data';
+
+let dataLoaded = false;
+let pendingCallbacks = [];
+
+// Sincronización con Vercel backend
+async function syncFromServer() {
+  try {
+    const r = await fetch(API_URL);
+    const data = await r.json();
+    if (data.appointments) localStorage.setItem(STORAGE_KEY, JSON.stringify(data.appointments));
+    if (data.blocks) localStorage.setItem(BLOCK_KEY, JSON.stringify(data.blocks));
+  } catch (_) { /* usa localStorage como fallback */ }
+  dataLoaded = true;
+  pendingCallbacks.forEach(cb => cb());
+  pendingCallbacks = [];
+}
+
+function onDataReady(cb) {
+  if (dataLoaded) cb();
+  else pendingCallbacks.push(cb);
+}
+
+async function pushToServer() {
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appointments: JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'),
+        blocks: JSON.parse(localStorage.getItem(BLOCK_KEY) || '[]'),
+      }),
+    });
+  } catch (_) {}
+}
+
+syncFromServer();
 
 const services = [
   { name: 'Corte de cabello + Barba', price: 15000, time: '45 min' },
@@ -29,9 +66,9 @@ const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
 
 function getAppts() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
-function saveAppts(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+function saveAppts(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); pushToServer(); }
 function getBlocks() { return JSON.parse(localStorage.getItem(BLOCK_KEY) || '[]'); }
-function saveBlocks(list) { localStorage.setItem(BLOCK_KEY, JSON.stringify(list)); }
+function saveBlocks(list) { localStorage.setItem(BLOCK_KEY, JSON.stringify(list)); pushToServer(); }
 function getUser() { const r = localStorage.getItem(USER_KEY); return r ? JSON.parse(r) : null; }
 function saveUser(u) { localStorage.setItem(USER_KEY, JSON.stringify(u)); }
 function clearUser() { localStorage.removeItem(USER_KEY); }
@@ -99,9 +136,14 @@ currentUser = getUser();
 if (currentUser) {
   loginCliente.style.display = 'none';
   updateBadge();
-  renderMyAppts();
-  checkToday();
 }
+onDataReady(() => {
+  if (currentUser) {
+    renderMyAppts();
+    checkToday();
+  }
+  renderTimes();
+});
 
 function updateBadge() {
   if (currentUser) {
@@ -186,7 +228,8 @@ function renderTimes() {
   });
 }
 
-renderMonth(); renderTimes();
+renderMonth();
+// renderTimes se llama desde onDataReady para esperar la data del server
 
 $('#prevMonth').addEventListener('click', () => {
   currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
@@ -262,8 +305,6 @@ function renderMyAppts() {
     checkToday();
   }));
 }
-renderMyAppts();
-
 // TODAY ALERT
 function checkToday() {
   if (!currentUser) { $('#todayAlert').style.display = 'none'; return; }
@@ -364,4 +405,7 @@ function renderAdminBlocks() {
   });
 }
 
-renderAdminTab();
+onDataReady(() => {
+  renderAdminTab();
+  renderMyAppts();
+});
