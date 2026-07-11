@@ -8,36 +8,75 @@
 </head>
 <body>
 
+<!-- PANTALLA LOGIN CLIENTE -->
+<div class="login-screen" id="loginCliente">
+  <div class="login-bg"></div>
+  <div class="login-card">
+    <h1>Modo Urbano</h1>
+    <p class="login-sub">Barbería</p>
+    <p class="login-desc">Ingresá tus datos para reservar tu turno</p>
+    <input type="text" id="cliName" placeholder="Nombre completo" />
+    <input type="tel" id="cliPhone" placeholder="Teléfono / WhatsApp" />
+    <button class="btn-login" id="cliLoginBtn">Ingresar</button>
+    <button class="btn-link" id="gotoAdminLink">Soy el barbero</button>
+  </div>
+</div>
+
+<!-- PANTALLA LOGIN ADMIN -->
+<div class="login-screen" id="loginAdmin" style="display:none">
+  <div class="login-bg"></div>
+  <div class="login-card">
+    <h1>🔐 Acceso</h1>
+    <p class="login-sub">Panel del barbero</p>
+    <p class="login-desc">Ingresá el PIN para ver todas las reservas</p>
+    <input type="password" id="adminPin" placeholder="PIN" maxlength="6" />
+    <p class="login-error" id="adminError"></p>
+    <button class="btn-login" id="adminLoginBtn">Ingresar</button>
+    <button class="btn-link" id="gotoClienteLink">Soy cliente</button>
+  </div>
+</div>
+
 <!-- NAVBAR -->
-<header class="navbar">
+<header class="navbar" id="navbar">
   <div class="container navbar-inner">
     <a href="#inicio" class="brand">
-      <img src="logo.jpeg" alt="Modo Urbano" class="brand-logo">
+      <img src="logo.jpeg" alt="" class="brand-logo">
       <span class="brand-name">Modo Urbano <em>Barbería</em></span>
     </a>
-
     <nav class="nav-links" id="navLinks">
       <a href="#inicio">Inicio</a>
       <a href="#servicios">Servicios</a>
       <a href="#barbero">Barbero</a>
       <a href="#reservar">Reservar</a>
+      <a href="#mis-turnos">Mis Turnos</a>
       <a href="#contacto">Contacto</a>
     </nav>
-
-    <a href="#reservar" class="btn btn-primary nav-cta">Reservar</a>
-
-    <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
-      <span></span><span></span><span></span>
-    </button>
+    <div class="nav-right">
+      <span class="user-badge" id="userBadge" style="display:none">
+        👤 <span id="userNameDisplay"></span>
+        <button class="user-logout" id="logoutBtn">✕</button>
+      </span>
+      <a href="#reservar" class="btn btn-primary nav-cta">Reservar</a>
+    </div>
+    <button class="menu-toggle" id="menuToggle"><span></span><span></span><span></span></button>
   </div>
 </header>
+
+<!-- ALERTA HOY -->
+<div class="today-alert" id="todayAlert" style="display:none">
+  <div class="container today-alert-inner">
+    <span>⏰</span>
+    <span id="todayAlertText"></span>
+    <button class="today-alert-close" id="todayAlertClose">✕</button>
+  </div>
+</div>
 
 <!-- HERO -->
 <section class="hero" id="inicio" style="background-image: linear-gradient(rgba(10,10,10,0.55), rgba(10,10,10,0.75)), url('https://images.unsplash.com/photo-1517869129960-b9b74bfcdecb?auto=format&fit=crop&w=1600&q=70');">
   <div class="container hero-content">
     <span class="eyebrow">Est. 2020</span>
     <h1>Localiza el estilo<br>que buscas en<br>Modo Urbano</h1>
-    <p>Cortes clásicos y modernos, perfilado de barba y una experiencia de barbería urbana en el centro de la ciudad.</p>
+    <p>Cortes clásicos y modernos, perfilado de barba, experiencia de barbería urbana.</p>
     <div class="hero-actions">
       <a href="#reservar" class="btn btn-primary">Reservar cita</a>
       <a href="#servicios" class="btn btn-ghost">Ver servicios</a>
@@ -50,7 +89,6 @@
   <div class="container">
     <p class="section-eyebrow">Nuestros servicios</p>
     <h2 class="section-title">Elige tu corte</h2>
-
     <div class="services-grid" id="servicesGrid"></div>
   </div>
 </section>
@@ -58,12 +96,12 @@
 <!-- BARBERO -->
 <section class="section section-alt" id="barbero">
   <div class="container barber-layout">
-    <div class="barber-photo" style="background-image: url('https://images.unsplash.com/photo-1770253980732-dfed1cfdfa43?auto=format&fit=crop&w=800&q=70');"></div>
+    <div class="barber-photo" style="background-image:url('https://images.unsplash.com/photo-1770253980732-dfed1cfdfa43?auto=format&fit=crop&w=800&q=70')"></div>
     <div class="barber-info">
       <span class="pro-tag">Barbero Pro</span>
       <h2>Milton</h2>
-      <p class="rating">&#9733; 4.9 &middot; 114 reseñas</p>
-      <p class="barber-desc">Especialista en cortes urbanos y perfilado de barba, con más de 8 años de experiencia en Modo Urbano.</p>
+      <p class="rating">★ 4.9 · 114 reseñas</p>
+      <p class="barber-desc">Especialista en cortes urbanos y perfilado de barba, más de 8 años de experiencia.</p>
       <a href="#reservar" class="btn btn-primary">Reservar con Milton</a>
     </div>
   </div>
@@ -74,25 +112,48 @@
   <div class="container">
     <p class="section-eyebrow">Agenda tu cita</p>
     <h2 class="section-title">Fecha y hora</h2>
-
     <div class="booking-card">
       <div class="month-nav">
-        <button class="icon-btn small" id="prevMonth">&#8249;</button>
-        <span class="month-label" id="monthLabel">Agosto 2026</span>
-        <button class="icon-btn small" id="nextMonth">&#8250;</button>
+        <button class="icon-btn small" id="prevMonth">‹</button>
+        <span class="month-label" id="monthLabel"></span>
+        <button class="icon-btn small" id="nextMonth">›</button>
       </div>
-
-      <p class="booking-note">Atendemos de lunes a sábado. Los domingos permanecemos cerrados.</p>
-
+      <p class="booking-note">Lunes a sábado. Domingos cerrados.</p>
       <p class="booking-label">Fecha</p>
       <div class="date-grid" id="date-grid"></div>
-
       <p class="booking-label">Hora</p>
       <div class="time-grid" id="time-grid"></div>
-
       <button class="btn btn-primary btn-block" id="confirmBooking">Confirmar reserva</button>
       <p class="booking-confirm" id="bookingConfirm"></p>
     </div>
+  </div>
+</section>
+
+<!-- MIS TURNOS -->
+<section class="section section-alt" id="mis-turnos">
+  <div class="container">
+    <p class="section-eyebrow">Tus reservas</p>
+    <h2 class="section-title">Mis Turnos</h2>
+    <div id="myAppointments"></div>
+  </div>
+</section>
+
+<!-- ADMIN -->
+<section class="section" id="admin-section" style="display:none">
+  <div class="container">
+    <p class="section-eyebrow">Panel de control</p>
+    <h2 class="section-title">Admin — Reservas</h2>
+    <div class="admin-filters">
+          <div class="admin-tabs">
+      <button class="admin-tab active" id="adminReservasTab">Reservas</button>
+      <button class="admin-tab" id="adminBloqueosTab">Bloqueos</button>
+    </div>
+      <button class="btn btn-primary" id="adminAllBtn">Todas</button>
+      <button class="btn btn-ghost" id="adminPendingBtn">Pendientes</button>
+      <button class="btn btn-ghost" id="adminTodayBtn">Hoy</button>
+      <button class="btn btn-ghost" id="adminLogoutBtn">Salir</button>
+    </div>
+    <div id="adminTable"></div>
   </div>
 </section>
 
@@ -100,15 +161,15 @@
 <footer class="footer" id="contacto">
   <div class="container footer-inner">
     <div class="footer-brand">
-      <img src="assets/logo.jpeg" alt="Modo Urbano" class="brand-logo">
+      <img src="logo.jpeg" alt="" class="brand-logo">
       <span class="brand-name">Modo Urbano <em>Barbería</em></span>
     </div>
     <div class="footer-info">
-      <p>Lun&ndash;Sáb: 9:00&ndash;20:00</p>
+      <p>Lun–Sáb: 9:00–20:00</p>
       <p>Concepción del Uruguay, Entre Ríos</p>
     </div>
   </div>
-  <p class="footer-copy">&copy; 2026 Modo Urbano Barbería</p>
+  <p class="footer-copy">© 2026 Modo Urbano Barbería</p>
 </footer>
 
 <script src="script.js"></script>
