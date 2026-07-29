@@ -47,7 +47,7 @@ const barbers = {
     role: 'Barbero Pro',
     rating: '4.9',
     reviews: 114,
-    photo: 'https://images.unsplash.com/photo-1770253980732-dfed1cfdfa43?auto=format&fit=crop&w=400&q=70',
+    photo: 'img/milton.jpeg',
     desc: 'Especialista en cortes urbanos y perfilado de barba, m&aacute;s de 8 a&ntilde;os de experiencia.',
     services: [
       { name: 'Corte de cabello + Barba', price: 15000, time: '45 min' },
@@ -63,7 +63,7 @@ const barbers = {
     role: 'Barbero',
     rating: '4.7',
     reviews: 72,
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=70',
+    photo: 'img/fede.jpeg',
     desc: 'Especialista en cortes cl&aacute;sicos y modernos, dedicado a darle el mejor look a cada cliente.',
     services: [
       { name: 'Corte de cabello + Barba', price: 12000, time: '45 min' },
