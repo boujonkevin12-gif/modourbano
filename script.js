@@ -57,21 +57,21 @@ const barbers = {
     ],
     schedule: ['09:30','10:00','10:30','11:00','11:30','12:00','12:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30'],
   },
-  lucas: {
-    id: 'lucas',
-    name: 'Lucas',
-    role: 'Estilista Senior',
-    rating: '4.8',
-    reviews: 89,
+  fede: {
+    id: 'fede',
+    name: 'Fede',
+    role: 'Barbero',
+    rating: '4.7',
+    reviews: 72,
     photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=70',
-    desc: 'Especialista en cortes modernos, degradados y dise&ntilde;os, con 5 a&ntilde;os de experiencia.',
+    desc: 'Especialista en cortes cl&aacute;sicos y modernos, dedicado a darle el mejor look a cada cliente.',
     services: [
-      { name: 'Corte degradado', price: 10000, time: '35 min' },
-      { name: 'Corte de cabello', price: 8000, time: '30 min' },
-      { name: 'Barba + Cejas', price: 6000, time: '25 min' },
-      { name: 'Diseño creativo', price: 12000, time: '45 min' },
+      { name: 'Corte de cabello + Barba', price: 12000, time: '45 min' },
+      { name: 'Corte de cabello', price: 10000, time: '35 min' },
+      { name: 'Barba', price: 4000, time: '20 min' },
+      { name: 'Tintura', price: null, time: 'Consultar' },
     ],
-    schedule: ['10:00','10:30','11:00','11:30','12:00','12:30','13:00','14:00','15:00','16:00','17:00','17:30','18:00','18:30','19:00'],
+    schedule: ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','13:00','14:00','15:00','16:00','17:00','17:30','18:00','18:30'],
   },
 };
 
