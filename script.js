@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'modo-urbano-appointments';
 const BLOCK_KEY = 'modo-urbano-blocks';
 const USER_KEY = 'modo-urbano-user';
-const ADMIN_PIN = '150815';
+const ADMIN_CREDENTIALS = { milton: '150815', fede: 'Vela1998' };
 const API_URL = window.location.origin + '/api/data';
 
 let dataLoaded = false;
@@ -96,7 +96,9 @@ let currentYear = new Date().getFullYear();
 let selectedDate = null;
 let selectedTime = null;
 let currentUser = null;
+let currentAdmin = null;
 let adminFilter = 'all';
+let adminTab = 'reservas';
 
 const $ = s => document.querySelector(s);
 const $$ = s => document.querySelectorAll(s);
@@ -109,8 +111,8 @@ function getUser() { const r = localStorage.getItem(USER_KEY); return r ? JSON.p
 function saveUser(u) { localStorage.setItem(USER_KEY, JSON.stringify(u)); }
 function clearUser() { localStorage.removeItem(USER_KEY); }
 
-function isBlocked(dateStr, timeStr) {
-  return getBlocks().some(b => b.date === dateStr && (b.time === timeStr || b.time === ''));
+function isBlocked(dateStr, timeStr, barberId) {
+  return getBlocks().some(b => b.date === dateStr && (b.time === timeStr || b.time === '') && (!b.barber || b.barber === barberId));
 }
 
 // LOGIN
@@ -119,6 +121,7 @@ const cliName = $('#cliName');
 const cliPhone = $('#cliPhone');
 const cliLoginBtn = $('#cliLoginBtn');
 const loginAdmin = $('#loginAdmin');
+const adminUser = $('#adminUser');
 const adminPin = $('#adminPin');
 const adminError = $('#adminError');
 const adminLoginBtn = $('#adminLoginBtn');
@@ -126,7 +129,7 @@ const adminLoginBtn = $('#adminLoginBtn');
 $('#gotoAdminLink').addEventListener('click', () => {
   loginCliente.style.display = 'none';
   loginAdmin.style.display = 'flex';
-  adminPin.value = ''; adminError.textContent = ''; adminPin.focus();
+  adminUser.value = ''; adminPin.value = ''; adminError.textContent = ''; adminUser.focus();
 });
 
 $('#gotoClienteLink').addEventListener('click', () => {
@@ -149,17 +152,21 @@ cliLoginBtn.addEventListener('click', () => {
 });
 
 adminLoginBtn.addEventListener('click', () => {
-  if (adminPin.value === ADMIN_PIN) {
+  const user = adminUser.value.trim().toLowerCase();
+  const pin = adminPin.value.trim();
+  if (ADMIN_CREDENTIALS[user] && ADMIN_CREDENTIALS[user] === pin) {
+    currentAdmin = user;
     loginAdmin.style.display = 'none';
     $('#admin-section').style.display = '';
     renderAdmin();
     document.querySelector('.navbar').scrollIntoView();
   } else {
-    adminError.textContent = 'PIN incorrecto';
+    adminError.textContent = 'Usuario o PIN incorrecto';
     adminPin.value = ''; adminPin.focus();
   }
 });
 
+adminUser.addEventListener('keydown', e => { if (e.key === 'Enter') adminPin.focus(); });
 adminPin.addEventListener('keydown', e => { if (e.key === 'Enter') adminLoginBtn.click(); });
 cliName.addEventListener('keydown', e => { if (e.key === 'Enter') cliPhone.focus(); });
 cliPhone.addEventListener('keydown', e => { if (e.key === 'Enter') cliLoginBtn.click(); });
@@ -319,7 +326,7 @@ function renderTimes() {
   const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(selectedDate || '').padStart(2,'0')}`;
   const appts = getAppts();
   b.schedule.forEach(t => {
-    const blocked = isBlocked(ds, t) || appts.some(a => a.barber === selectedBarber && a.date === ds && a.time === t);
+    const blocked = isBlocked(ds, t, selectedBarber) || appts.some(a => a.barber === selectedBarber && a.date === ds && a.time === t);
     const cell = document.createElement('button');
     cell.className = 'time-cell' + (t === selectedTime ? ' selected' : '') + (blocked ? ' disabled' : '');
     cell.textContent = t;
@@ -354,7 +361,7 @@ $('#confirmBooking').addEventListener('click', () => {
   const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(selectedDate).padStart(2,'0')}`;
   const list = getAppts();
 
-  if (list.find(a => a.barber === selectedBarber && a.date === ds && a.time === selectedTime) || isBlocked(ds, selectedTime)) {
+  if (list.find(a => a.barber === selectedBarber && a.date === ds && a.time === selectedTime) || isBlocked(ds, selectedTime, selectedBarber)) {
     $('#bookingConfirm').textContent = 'Ese horario no está disponible';
     return;
   }
@@ -429,54 +436,134 @@ function tryNotify(a) {
 }
 
 // ===================== ADMIN =====================
-$('#adminLogoutBtn').addEventListener('click', () => { $('#admin-section').style.display = 'none'; loginAdmin.style.display = 'flex'; adminPin.value = ''; adminError.textContent = ''; adminPin.focus(); });
+$('#adminLogoutBtn').addEventListener('click', () => {
+  $('#admin-section').style.display = 'none';
+  loginAdmin.style.display = 'flex';
+  currentAdmin = null;
+  adminUser.value = ''; adminPin.value = ''; adminError.textContent = ''; adminUser.focus();
+});
 
 $('#adminAllBtn').addEventListener('click', () => { adminFilter = 'all'; renderAdmin(); });
 $('#adminPendingBtn').addEventListener('click', () => { adminFilter = 'pending'; renderAdmin(); });
 $('#adminTodayBtn').addEventListener('click', () => { adminFilter = 'today'; renderAdmin(); });
 
-function renderAdminStats() {
-  const cont = $('#adminStats');
-  const all = getAppts();
-  let h = '';
-  barberIds.forEach(id => {
-    const b = barbers[id];
-    const count = all.filter(a => a.barber === id).length;
-    const today = all.filter(a => a.barber === id && a.date === `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`);
-    h += `<div class="admin-stat-card">
-      <div class="stat-avatar" style="background-image:url('${b.photo}')"></div>
-      <div class="stat-info">
-        <h4>${b.name}</h4>
-        <p>${today.length} turno${today.length !== 1 ? 's' : ''} hoy</p>
-      </div>
-      <div class="stat-count">${count}</div>
-    </div>`;
-  });
-  cont.innerHTML = h;
-}
+$('#adminReservasTab').addEventListener('click', () => { adminTab = 'reservas'; renderAdmin(); });
+$('#adminBloqueosTab').addEventListener('click', () => { adminTab = 'bloqueos'; renderAdmin(); });
 
 function renderAdmin() {
-  renderAdminStats();
-  const c = $('#adminTable');
-  let all = getAppts();
+  const b = barbers[currentAdmin];
+  if (!b) return;
+  $('#adminEyebrow').textContent = 'Panel de ' + b.name;
+  $('#adminTitle').textContent = b.name + ' — Dashboard';
+  $$('.admin-tab').forEach(t => t.classList.remove('active'));
+  if (adminTab === 'reservas') $('#adminReservasTab').classList.add('active');
+  else $('#adminBloqueosTab').classList.add('active');
+
+  if (adminTab === 'reservas') renderAdminReservas();
+  else renderAdminBlocks();
+}
+
+function renderAdminReservas() {
+  const c = $('#adminContent');
+  const b = barbers[currentAdmin];
+  const all = getAppts().filter(a => a.barber === currentAdmin);
   const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-  if (adminFilter === 'pending') all = all.filter(a => a.status === 'pendiente');
-  if (adminFilter === 'today') all = all.filter(a => a.date === today);
-  all.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
-  if (!all.length) { c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim)">No hay reservas</div>'; return; }
-  let h = '<div class="admin-table"><table><thead><tr><th>Barbero</th><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Fecha</th><th>Hora</th><th>Estado</th><th></th></tr></thead><tbody>';
-  all.forEach(a => {
-    const p = a.date.split('-');
-    const isT = a.date === today;
-    h += `<tr><td><strong>${a.barberName || '—'}</strong></td><td>${a.userName}</td><td>${a.userPhone}</td><td>${a.service}</td><td>${p[2]}/${p[1]}/${p[0]}${isT ? ' <span style="color:var(--cream);font-size:11px">HOY</span>' : ''}</td><td>${a.time}</td><td><span class="status-badge ${a.status}">${a.status}</span></td><td class="admin-actions">${a.status === 'pendiente' ? `<button class="complete-btn" data-id="${a.id}">Completar</button>` : ''}<button class="danger delete-btn" data-id="${a.id}">Eliminar</button></td></tr>`;
-  });
-  c.innerHTML = h + '</tbody></table></div>';
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const todayCount = all.filter(a => a.date === todayStr).length;
+
+  let h = '<div class="admin-stats"><div class="admin-stat-card">';
+  h += `<div class="stat-avatar" style="background-image:url('${b.photo}')"></div>`;
+  h += `<div class="stat-info"><h4>${b.name}</h4><p>${todayCount} turno${todayCount !== 1 ? 's' : ''} hoy</p></div>`;
+  h += `<div class="stat-count">${all.length}</div>`;
+  h += '</div></div>';
+
+  h += '<div class="admin-filters">';
+  h += `<button class="btn ${adminFilter === 'all' ? 'btn-primary' : 'btn-ghost'}" id="adminAllBtn">Todas</button>`;
+  h += `<button class="btn ${adminFilter === 'pending' ? 'btn-primary' : 'btn-ghost'}" id="adminPendingBtn">Pendientes</button>`;
+  h += `<button class="btn ${adminFilter === 'today' ? 'btn-primary' : 'btn-ghost'}" id="adminTodayBtn">Hoy</button>`;
+  h += '<button class="btn btn-ghost" id="adminLogoutBtn">Salir</button>';
+  h += '</div>';
+
+  let filtered = [...all];
+  if (adminFilter === 'pending') filtered = filtered.filter(a => a.status === 'pendiente');
+  if (adminFilter === 'today') filtered = filtered.filter(a => a.date === todayStr);
+  filtered.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+
+  if (!filtered.length) {
+    h += '<div style="text-align:center;padding:40px;color:var(--text-dim)">No hay reservas</div>';
+  } else {
+    h += '<div class="admin-table"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Fecha</th><th>Hora</th><th>Estado</th><th></th></tr></thead><tbody>';
+    filtered.forEach(a => {
+      const p = a.date.split('-');
+      const isT = a.date === todayStr;
+      h += `<tr><td>${a.userName}</td><td>${a.userPhone}</td><td>${a.service}</td><td>${p[2]}/${p[1]}/${p[0]}${isT ? ' <span style="color:var(--cream);font-size:11px">HOY</span>' : ''}</td><td>${a.time}</td><td><span class="status-badge ${a.status}">${a.status}</span></td><td class="admin-actions">${a.status === 'pendiente' ? `<button class="complete-btn" data-id="${a.id}">Completar</button>` : ''}<button class="danger delete-btn" data-id="${a.id}">Eliminar</button></td></tr>`;
+    });
+    h += '</tbody></table></div>';
+  }
+
+  c.innerHTML = h;
   c.querySelectorAll('.complete-btn').forEach(b => b.addEventListener('click', () => { const l = getAppts(); const x = l.find(z => z.id === parseInt(b.dataset.id)); if (x) x.status = 'completado'; saveAppts(l); renderAdmin(); renderMyAppts(); }));
   c.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => { if (!confirm('Eliminar?')) return; let l = getAppts(); l = l.filter(x => x.id !== parseInt(b.dataset.id)); saveAppts(l); renderAdmin(); renderMyAppts(); checkToday(); }));
+  $('#adminAllBtn').addEventListener('click', () => { adminFilter = 'all'; renderAdmin(); });
+  $('#adminPendingBtn').addEventListener('click', () => { adminFilter = 'pending'; renderAdmin(); });
+  $('#adminTodayBtn').addEventListener('click', () => { adminFilter = 'today'; renderAdmin(); });
+  $('#adminLogoutBtn').addEventListener('click', () => {
+    $('#admin-section').style.display = 'none';
+    loginAdmin.style.display = 'flex';
+    currentAdmin = null;
+    adminUser.value = ''; adminPin.value = ''; adminError.textContent = ''; adminUser.focus();
+  });
+}
+
+function renderAdminBlocks() {
+  const c = $('#adminContent');
+  const b = barbers[currentAdmin];
+  const blocks = getBlocks().filter(bl => !bl.barber || bl.barber === currentAdmin);
+
+  let h = `<div style="margin-bottom:20px"><h3 style="font-size:18px;margin-bottom:12px">Bloquear horario — ${b.name}</h3>`;
+  h += `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+    <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Fecha</label><input type="date" id="blockDate" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px" /></div>
+    <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Hora</label><select id="blockTime" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px"><option value="">Todo el día</option>`;
+  b.schedule.forEach(t => { h += `<option value="${t}">${t}</option>`; });
+  h += `</select></div>
+    <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Motivo</label><input type="text" id="blockReason" placeholder="Ej: feriado" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px" /></div>
+    <div><button class="btn btn-primary" id="addBlockBtn">Bloquear</button></div>
+    <div><button class="btn btn-ghost" id="adminLogoutBtn" style="margin-left:auto">Salir</button></div>
+  </div></div>`;
+
+  if (blocks.length) {
+    blocks.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+    h += '<div class="admin-table"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Motivo</th><th></th></tr></thead><tbody>';
+    blocks.forEach(bl => {
+      const p = bl.date.split('-');
+      h += `<tr><td>${p[2]}/${p[1]}/${p[0]}</td><td>${bl.time || 'Todo el día'}</td><td>${bl.reason || '—'}</td><td class="admin-actions"><button class="danger unblock-btn" data-id="${bl.id}">Desbloquear</button></td></tr>`;
+    });
+    h += '</tbody></table></div>';
+  } else {
+    h += '<div style="color:var(--text-dim);padding:20px 0">No hay bloqueos</div>';
+  }
+
+  c.innerHTML = h;
+
+  $('#addBlockBtn').addEventListener('click', () => {
+    const date = $('#blockDate').value;
+    const time = $('#blockTime').value;
+    const reason = $('#blockReason').value.trim();
+    if (!date) return;
+    const list = getBlocks();
+    list.push({ id: Date.now(), barber: currentAdmin, date, time, reason, createdAt: new Date().toISOString() });
+    saveBlocks(list);
+    renderAdminBlocks();
+    renderTimes();
+  });
+  $('#adminLogoutBtn').addEventListener('click', () => {
+    $('#admin-section').style.display = 'none';
+    loginAdmin.style.display = 'flex';
+    currentAdmin = null;
+    adminUser.value = ''; adminPin.value = ''; adminError.textContent = ''; adminUser.focus();
+  });
 }
 
 onDataReady(() => {
-  renderAdmin();
   renderMyAppts();
 });

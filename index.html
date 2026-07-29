@@ -28,8 +28,9 @@
   <div class="login-card">
     <h1>🔐 Acceso</h1>
     <p class="login-sub">Panel del barbero</p>
-    <p class="login-desc">Ingresá el PIN para administrar</p>
-    <input type="password" id="adminPin" placeholder="PIN" maxlength="6" />
+    <p class="login-desc">Ingresá tus datos para administrar</p>
+    <input type="text" id="adminUser" placeholder="Usuario" />
+    <input type="password" id="adminPin" placeholder="PIN" />
     <p class="login-error" id="adminError"></p>
     <button class="btn-login" id="adminLoginBtn">Ingresar</button>
     <button class="btn-link" id="gotoClienteLink">Soy cliente</button>
@@ -131,16 +132,13 @@
 <!-- ADMIN -->
 <section class="section" id="admin-section" style="display:none">
   <div class="container">
-    <p class="section-eyebrow">Panel de control</p>
-    <h2 class="section-title">Dashboard — Reservas</h2>
-    <div class="admin-stats" id="adminStats"></div>
-    <div class="admin-filters">
-      <button class="btn btn-primary" id="adminAllBtn">Todas</button>
-      <button class="btn btn-ghost" id="adminPendingBtn">Pendientes</button>
-      <button class="btn btn-ghost" id="adminTodayBtn">Hoy</button>
-      <button class="btn btn-ghost" id="adminLogoutBtn">Salir</button>
+    <p class="section-eyebrow" id="adminEyebrow">Panel de control</p>
+    <h2 class="section-title" id="adminTitle">Dashboard</h2>
+    <div class="admin-tabs">
+      <button class="admin-tab active" id="adminReservasTab">Reservas</button>
+      <button class="admin-tab" id="adminBloqueosTab">Bloqueos</button>
     </div>
-    <div id="adminTable"></div>
+    <div id="adminContent"></div>
   </div>
 </section>
 
