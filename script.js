@@ -63,6 +63,7 @@ const barbers = {
       { name: 'Barba', price: 4000, time: '20 min' },
       { name: 'Tintura', price: null, time: 'Consultar' },
     ],
+    closedDays: [0],
     schedule: ['09:30','10:00','10:30','11:00','11:30','12:00','12:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30'],
   },
   fede: {
@@ -79,7 +80,8 @@ const barbers = {
       { name: 'Barba', price: 4000, time: '20 min' },
       { name: 'Tintura', price: null, time: 'Consultar' },
     ],
-    schedule: ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','13:00','14:00','15:00','16:00','17:00','17:30','18:00','18:30'],
+    closedDays: [0, 3],
+    schedule: ['17:30','18:00','18:30','19:00','19:30','20:00','20:30'],
   },
 };
 
@@ -287,7 +289,7 @@ function getDates() {
   const d = [];
   for (let i = 1; i <= dim; i++) {
     const di = new Date(currentYear, currentMonth, i).getDay();
-    d.push({ day: i, label: dayLabels[di], closed: di === 0 });
+    d.push({ day: i, dayOfWeek: di, label: dayLabels[di], closed: di === 0 });
   }
   return d;
 }
@@ -296,13 +298,16 @@ function renderMonth() {
   $('#monthLabel').textContent = `${months[currentMonth]} ${currentYear}`;
   const dateGrid = $('#date-grid');
   const dates = getDates();
-  if (selectedDate === null) { const f = dates.find(x => !x.closed); selectedDate = f ? f.day : null; }
+  const b = barbers[selectedBarber];
+  const closedDays = b.closedDays || [0];
+  if (selectedDate === null) { const f = dates.find(x => !(x.closed || closedDays.includes(x.dayOfWeek))); selectedDate = f ? f.day : null; }
   dateGrid.innerHTML = '';
   dates.forEach(d => {
+    const closed = d.closed || closedDays.includes(d.dayOfWeek);
     const cell = document.createElement('button');
-    cell.className = 'date-cell' + (d.day === selectedDate ? ' selected' : '') + (d.closed ? ' disabled' : '');
+    cell.className = 'date-cell' + (d.day === selectedDate ? ' selected' : '') + (closed ? ' disabled' : '');
     cell.innerHTML = `<span class="num">${d.day}</span><span class="lbl">${d.label}</span>`;
-    if (!d.closed) cell.addEventListener('click', () => { selectedDate = d.day; renderMonth(); renderTimes(); });
+    if (!closed) cell.addEventListener('click', () => { selectedDate = d.day; renderMonth(); renderTimes(); });
     dateGrid.appendChild(cell);
   });
 }
