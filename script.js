@@ -39,12 +39,12 @@ async function pushToServer() {
 
 syncFromServer();
 
-function showServiciosSection() {
-  $('#servicios').style.display = 'block';
+function showReservarSection() {
+  $('#reservar').style.display = 'block';
 }
 
-function scrollToServicios() {
-  $('#servicios').scrollIntoView({ behavior: 'smooth', block: 'start' });
+function scrollToReservar() {
+  $('#reservar').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ===================== BARBERS =====================
@@ -208,32 +208,46 @@ function renderBarberosGrid() {
     card.className = 'barbero-card' + (id === selectedBarber ? ' active' : '');
     card.innerHTML = `
       <div class="barbero-photo" style="background-image:url('${b.photo}')"></div>
-      <h3>${b.name}</h3>
-      <div class="barbero-role">${b.role}</div>
-      <div class="barbero-rating">★ ${b.rating} · ${b.reviews} reseñas</div>
-      <div class="barbero-desc">${b.desc}</div>
+      <div class="barbero-card-body">
+        <h3>${b.name}</h3>
+        <div class="barbero-role">${b.role}</div>
+        <div class="barbero-rating">★ ${b.rating} · ${b.reviews} reseñas</div>
+        <div class="barbero-desc">${b.desc}</div>
+        <button class="btn-card">Reservar con ${b.name}</button>
+      </div>
     `;
-    card.addEventListener('click', () => {
+    const doSelect = () => {
       selectedBarber = id;
       $$('.barbero-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
-      showServiciosSection();
-      renderServices();
-      renderBarberSelect();
-      selectedTime = null;
-      renderTimes();
-      scrollToServicios();
+      showReservarSection();
+      renderReservar();
+      scrollToReservar();
+    };
+    card.addEventListener('click', doSelect);
+    card.querySelector('.btn-card').addEventListener('click', e => {
+      e.stopPropagation();
+      doSelect();
     });
     grid.appendChild(card);
   });
 }
 renderBarberosGrid();
 
+function renderReservar() {
+  const b = barbers[selectedBarber];
+  $('#reservarEyebrow').textContent = 'Reservar con';
+  $('#reservarTitle').textContent = b.name;
+  renderServices();
+  renderBarberSelect();
+  selectedTime = null;
+  renderTimes();
+}
+
 // ===================== SERVICES =====================
 function renderServices() {
   const grid = $('#servicesGrid');
   const b = barbers[selectedBarber];
-  $('#serviciosTitle').textContent = `Servicios de ${b.name}`;
   grid.innerHTML = '';
   b.services.forEach((s, idx) => {
     const card = document.createElement('div');
@@ -260,10 +274,7 @@ function renderBarberSelect() {
     opt.textContent = b.name;
     opt.addEventListener('click', () => {
       selectedBarber = id;
-      renderBarberSelect();
-      renderServices();
-      selectedTime = null;
-      renderTimes();
+      renderReservar();
     });
     cont.appendChild(opt);
   });
@@ -415,20 +426,32 @@ function tryNotify(a) {
 // ===================== ADMIN =====================
 $('#adminLogoutBtn').addEventListener('click', () => { $('#admin-section').style.display = 'none'; loginAdmin.style.display = 'flex'; adminPin.value = ''; adminError.textContent = ''; adminPin.focus(); });
 
-$('#adminAllBtn').addEventListener('click', () => { adminFilter = 'all'; renderAdminTab(); });
-$('#adminPendingBtn').addEventListener('click', () => { adminFilter = 'pending'; renderAdminTab(); });
-$('#adminTodayBtn').addEventListener('click', () => { adminFilter = 'today'; renderAdminTab(); });
+$('#adminAllBtn').addEventListener('click', () => { adminFilter = 'all'; renderAdmin(); });
+$('#adminPendingBtn').addEventListener('click', () => { adminFilter = 'pending'; renderAdmin(); });
+$('#adminTodayBtn').addEventListener('click', () => { adminFilter = 'today'; renderAdmin(); });
 
-let adminTab = 'reservas';
-$('#adminReservasTab').addEventListener('click', () => { adminTab = 'reservas'; renderAdminTab(); });
-$('#adminBloqueosTab').addEventListener('click', () => { adminTab = 'bloqueos'; renderAdminTab(); });
-
-function renderAdminTab() {
-  if (adminTab === 'reservas') renderAdmin();
-  else renderAdminBlocks();
+function renderAdminStats() {
+  const cont = $('#adminStats');
+  const all = getAppts();
+  let h = '';
+  barberIds.forEach(id => {
+    const b = barbers[id];
+    const count = all.filter(a => a.barber === id).length;
+    const today = all.filter(a => a.barber === id && a.date === `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`);
+    h += `<div class="admin-stat-card">
+      <div class="stat-avatar" style="background-image:url('${b.photo}')"></div>
+      <div class="stat-info">
+        <h4>${b.name}</h4>
+        <p>${today.length} turno${today.length !== 1 ? 's' : ''} hoy</p>
+      </div>
+      <div class="stat-count">${count}</div>
+    </div>`;
+  });
+  cont.innerHTML = h;
 }
 
 function renderAdmin() {
+  renderAdminStats();
   const c = $('#adminTable');
   let all = getAppts();
   const now = new Date();
@@ -448,49 +471,7 @@ function renderAdmin() {
   c.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => { if (!confirm('Eliminar?')) return; let l = getAppts(); l = l.filter(x => x.id !== parseInt(b.dataset.id)); saveAppts(l); renderAdmin(); renderMyAppts(); checkToday(); }));
 }
 
-function renderAdminBlocks() {
-  const c = $('#adminTable');
-  const blocks = getBlocks();
-  let h = '<div style="margin-bottom:20px"><h3 style="font-size:18px;margin-bottom:12px">Agregar bloqueo</h3>';
-  h += `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
-    <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Fecha</label><input type="date" id="blockDate" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px" /></div>
-    <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Hora</label><select id="blockTime" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px"><option value="">Todo el día</option>`;
-  // collect all times from all barbers
-  const allTimes = [...new Set(Object.values(barbers).flatMap(b => b.schedule))].sort();
-  allTimes.forEach(t => { h += `<option value="${t}">${t}</option>`; });
-  h += `</select></div>
-    <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Motivo</label><input type="text" id="blockReason" placeholder="Ej: feriado" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px" /></div>
-    <div><button class="btn btn-primary" id="addBlockBtn">Bloquear</button></div>
-  </div></div>`;
-
-  if (blocks.length) {
-    blocks.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
-    h += '<div class="admin-table"><table><thead><tr><th>Fecha</th><th>Hora</th><th>Motivo</th><th></th></tr></thead><tbody>';
-    blocks.forEach(b => {
-      const p = b.date.split('-');
-      h += `<tr><td>${p[2]}/${p[1]}/${p[0]}</td><td>${b.time || 'Todo el día'}</td><td>${b.reason || '—'}</td><td class="admin-actions"><button class="danger unblock-btn" data-id="${b.id}">Desbloquear</button></td></tr>`;
-    });
-    h += '</tbody></table></div>';
-  } else {
-    h += '<div style="color:var(--text-dim);padding:20px 0">No hay bloqueos activos</div>';
-  }
-
-  c.innerHTML = h;
-
-  $('#addBlockBtn').addEventListener('click', () => {
-    const date = $('#blockDate').value;
-    const time = $('#blockTime').value;
-    const reason = $('#blockReason').value.trim();
-    if (!date) return;
-    const list = getBlocks();
-    list.push({ id: Date.now(), date, time, reason, createdAt: new Date().toISOString() });
-    saveBlocks(list);
-    renderAdminBlocks();
-    renderTimes();
-  });
-}
-
 onDataReady(() => {
-  renderAdminTab();
+  renderAdmin();
   renderMyAppts();
 });

@@ -45,7 +45,6 @@
     </a>
     <nav class="nav-links" id="navLinks">
       <a href="#inicio">Inicio</a>
-      <a href="#servicios">Servicios</a>
       <a href="#barberos">Barberos</a>
       <a href="#reservar">Reservar</a>
       <a href="#mis-turnos">Mis Turnos</a>
@@ -93,24 +92,17 @@
   </div>
 </section>
 
-<!-- SERVICIOS -->
-<section class="section" id="servicios" style="display:none">
-  <div class="container">
-    <p class="section-eyebrow">Nuestros servicios</p>
-    <h2 class="section-title" id="serviciosTitle">Elige tu corte</h2>
-    <div class="services-grid" id="servicesGrid"></div>
-  </div>
-</section>
-
 <!-- RESERVAR -->
-<section class="section" id="reservar">
+<section class="section" id="reservar" style="display:none">
   <div class="container">
-    <p class="section-eyebrow">Agenda tu cita</p>
-    <h2 class="section-title">Fecha y hora</h2>
+    <p class="section-eyebrow" id="reservarEyebrow">Reservar con</p>
+    <h2 class="section-title" id="reservarTitle">Milton</h2>
     <div class="booking-card">
       <p class="booking-label">Barbero</p>
       <div class="barber-select" id="barberSelect"></div>
-
+      <p class="booking-label">Servicios</p>
+      <div class="services-grid" id="servicesGrid"></div>
+      <div class="booking-divider"></div>
       <div class="month-nav">
         <button class="icon-btn small" id="prevMonth">‹</button>
         <span class="month-label" id="monthLabel"></span>
@@ -140,12 +132,9 @@
 <section class="section" id="admin-section" style="display:none">
   <div class="container">
     <p class="section-eyebrow">Panel de control</p>
-    <h2 class="section-title">Admin — Reservas</h2>
+    <h2 class="section-title">Dashboard — Reservas</h2>
+    <div class="admin-stats" id="adminStats"></div>
     <div class="admin-filters">
-      <div class="admin-tabs">
-        <button class="admin-tab active" id="adminReservasTab">Reservas</button>
-        <button class="admin-tab" id="adminBloqueosTab">Bloqueos</button>
-      </div>
       <button class="btn btn-primary" id="adminAllBtn">Todas</button>
       <button class="btn btn-ghost" id="adminPendingBtn">Pendientes</button>
       <button class="btn btn-ghost" id="adminTodayBtn">Hoy</button>
