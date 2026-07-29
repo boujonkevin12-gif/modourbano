@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<!-- PANTALLA LOGIN CLIENTE -->
+<!-- LOGIN CLIENTE -->
 <div class="login-screen" id="loginCliente">
   <div class="login-bg"></div>
   <div class="login-card">
@@ -22,13 +22,13 @@
   </div>
 </div>
 
-<!-- PANTALLA LOGIN ADMIN -->
+<!-- LOGIN ADMIN -->
 <div class="login-screen" id="loginAdmin" style="display:none">
   <div class="login-bg"></div>
   <div class="login-card">
     <h1>🔐 Acceso</h1>
     <p class="login-sub">Panel del barbero</p>
-    <p class="login-desc">Ingresá el PIN para ver todas las reservas</p>
+    <p class="login-desc">Ingresá el PIN para administrar</p>
     <input type="password" id="adminPin" placeholder="PIN" maxlength="6" />
     <p class="login-error" id="adminError"></p>
     <button class="btn-login" id="adminLoginBtn">Ingresar</button>
@@ -46,7 +46,7 @@
     <nav class="nav-links" id="navLinks">
       <a href="#inicio">Inicio</a>
       <a href="#servicios">Servicios</a>
-      <a href="#barbero">Barbero</a>
+      <a href="#barberos">Barberos</a>
       <a href="#reservar">Reservar</a>
       <a href="#mis-turnos">Mis Turnos</a>
       <a href="#contacto">Contacto</a>
@@ -79,7 +79,7 @@
     <p>Cortes clásicos y modernos, perfilado de barba, experiencia de barbería urbana.</p>
     <div class="hero-actions">
       <a href="#reservar" class="btn btn-primary">Reservar cita</a>
-      <a href="#servicios" class="btn btn-ghost">Ver servicios</a>
+      <a href="#servicios" class="btn btn-ghost">Servicios</a>
     </div>
   </div>
 </section>
@@ -88,22 +88,17 @@
 <section class="section" id="servicios">
   <div class="container">
     <p class="section-eyebrow">Nuestros servicios</p>
-    <h2 class="section-title">Elige tu corte</h2>
+    <h2 class="section-title" id="serviciosTitle">Elige tu corte</h2>
     <div class="services-grid" id="servicesGrid"></div>
   </div>
 </section>
 
-<!-- BARBERO -->
-<section class="section section-alt" id="barbero">
-  <div class="container barber-layout">
-    <div class="barber-photo" style="background-image:url('https://images.unsplash.com/photo-1770253980732-dfed1cfdfa43?auto=format&fit=crop&w=800&q=70')"></div>
-    <div class="barber-info">
-      <span class="pro-tag">Barbero Pro</span>
-      <h2>Milton</h2>
-      <p class="rating">★ 4.9 · 114 reseñas</p>
-      <p class="barber-desc">Especialista en cortes urbanos y perfilado de barba, más de 8 años de experiencia.</p>
-      <a href="#reservar" class="btn btn-primary">Reservar con Milton</a>
-    </div>
+<!-- BARBEROS -->
+<section class="section section-alt" id="barberos">
+  <div class="container">
+    <p class="section-eyebrow">Elegí tu barbero</p>
+    <h2 class="section-title">Nuestros <span style="color:var(--cream)">profesionales</span></h2>
+    <div class="barberos-grid" id="barberosGrid"></div>
   </div>
 </section>
 
@@ -113,6 +108,9 @@
     <p class="section-eyebrow">Agenda tu cita</p>
     <h2 class="section-title">Fecha y hora</h2>
     <div class="booking-card">
+      <p class="booking-label">Barbero</p>
+      <div class="barber-select" id="barberSelect"></div>
+
       <div class="month-nav">
         <button class="icon-btn small" id="prevMonth">‹</button>
         <span class="month-label" id="monthLabel"></span>
@@ -144,10 +142,10 @@
     <p class="section-eyebrow">Panel de control</p>
     <h2 class="section-title">Admin — Reservas</h2>
     <div class="admin-filters">
-          <div class="admin-tabs">
-      <button class="admin-tab active" id="adminReservasTab">Reservas</button>
-      <button class="admin-tab" id="adminBloqueosTab">Bloqueos</button>
-    </div>
+      <div class="admin-tabs">
+        <button class="admin-tab active" id="adminReservasTab">Reservas</button>
+        <button class="admin-tab" id="adminBloqueosTab">Bloqueos</button>
+      </div>
       <button class="btn btn-primary" id="adminAllBtn">Todas</button>
       <button class="btn btn-ghost" id="adminPendingBtn">Pendientes</button>
       <button class="btn btn-ghost" id="adminTodayBtn">Hoy</button>

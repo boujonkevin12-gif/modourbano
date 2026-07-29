@@ -377,26 +377,97 @@ img { display: block; max-width: 100%; }
 .service-card .price { font-size: 24px; font-weight: 800; color: var(--cream); margin-bottom: 4px; }
 .service-card .duration { font-size: 13px; color: var(--text-dim); }
 
-/* BARBERO */
-.barber-layout { display: grid; grid-template-columns: 380px 1fr; gap: 56px; align-items: center; }
-.barber-photo { width: 100%; aspect-ratio: 4/5; border-radius: 18px; background-size: cover; background-position: center; }
-
-.pro-tag {
-  display: inline-block;
-  background: var(--cream);
-  color: #111;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  padding: 5px 12px;
-  border-radius: 999px;
-  margin-bottom: 16px;
+/* BARBEROS GRID */
+.barberos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
 }
 
-.barber-info h2 { font-size: 40px; text-transform: uppercase; font-weight: 800; margin-bottom: 8px; }
-.rating { font-size: 15px; color: var(--text-dim); margin-bottom: 18px; }
-.barber-desc { font-size: 15px; line-height: 1.7; color: #ccc; max-width: 440px; margin-bottom: 28px; }
+.barbero-card {
+  background: var(--card);
+  border: 2px solid var(--divider);
+  border-radius: 20px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .25s;
+}
+
+.barbero-card:hover {
+  border-color: var(--cream-dim);
+  transform: translateY(-4px);
+}
+
+.barbero-card.active {
+  border-color: var(--cream);
+  box-shadow: 0 0 0 2px rgba(237,230,214,.15);
+}
+
+.barbero-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  margin: 0 auto 16px;
+  border: 3px solid var(--divider);
+  transition: border-color .25s;
+}
+
+.barbero-card.active .barbero-photo {
+  border-color: var(--cream);
+}
+
+.barbero-card h3 {
+  font-size: 20px;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.barbero-role {
+  font-size: 12px;
+  color: var(--cream);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 4px 0 8px;
+}
+
+.barbero-rating {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.barbero-desc {
+  font-size: 13px;
+  color: #aaa;
+  line-height: 1.5;
+  margin-top: 10px;
+}
+
+/* BARBER SELECT (inside booking) */
+.barber-select {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.barber-option {
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid var(--divider);
+  background: var(--ink);
+  color: #fff;
+  cursor: pointer;
+  text-align: center;
+  transition: all .2s;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.barber-option:hover { border-color: var(--cream-dim); }
+.barber-option.active { border-color: var(--cream); background: rgba(237,230,214,.08); }
 
 /* BOOKING */
 .booking-card { max-width: 480px; background: var(--card); border: 1px solid var(--divider); border-radius: 18px; padding: 28px; }
@@ -511,8 +582,7 @@ img { display: block; max-width: 100%; }
 
 /* RESPONSIVE */
 @media (max-width: 860px) {
-  .barber-layout { grid-template-columns: 1fr; }
-  .barber-photo { max-width: 340px; }
+  .barberos-grid { grid-template-columns: 1fr; }
   .services-grid { grid-template-columns: repeat(2,1fr); }
 }
 

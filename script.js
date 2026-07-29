@@ -7,14 +7,13 @@ const API_URL = window.location.origin + '/api/data';
 let dataLoaded = false;
 let pendingCallbacks = [];
 
-// Sincronización con Vercel backend
 async function syncFromServer() {
   try {
     const r = await fetch(API_URL);
     const data = await r.json();
     if (data.appointments) localStorage.setItem(STORAGE_KEY, JSON.stringify(data.appointments));
     if (data.blocks) localStorage.setItem(BLOCK_KEY, JSON.stringify(data.blocks));
-  } catch (_) { /* usa localStorage como fallback */ }
+  } catch (_) {}
   dataLoaded = true;
   pendingCallbacks.forEach(cb => cb());
   pendingCallbacks = [];
@@ -40,20 +39,47 @@ async function pushToServer() {
 
 syncFromServer();
 
-const services = [
-  { name: 'Corte de cabello + Barba', price: 15000, time: '45 min' },
-  { name: 'Corte de cabello', price: 12000, time: '40 min' },
-  { name: 'Barba', price: 4000, time: '20 min' },
-  { name: 'Tintura', price: null, time: 'Consultar' },
-];
+// ===================== BARBERS =====================
+const barbers = {
+  milton: {
+    id: 'milton',
+    name: 'Milton',
+    role: 'Barbero Pro',
+    rating: '4.9',
+    reviews: 114,
+    photo: 'https://images.unsplash.com/photo-1770253980732-dfed1cfdfa43?auto=format&fit=crop&w=400&q=70',
+    desc: 'Especialista en cortes urbanos y perfilado de barba, m&aacute;s de 8 a&ntilde;os de experiencia.',
+    services: [
+      { name: 'Corte de cabello + Barba', price: 15000, time: '45 min' },
+      { name: 'Corte de cabello', price: 12000, time: '40 min' },
+      { name: 'Barba', price: 4000, time: '20 min' },
+      { name: 'Tintura', price: null, time: 'Consultar' },
+    ],
+    schedule: ['09:30','10:00','10:30','11:00','11:30','12:00','12:30','17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30'],
+  },
+  lucas: {
+    id: 'lucas',
+    name: 'Lucas',
+    role: 'Estilista Senior',
+    rating: '4.8',
+    reviews: 89,
+    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=70',
+    desc: 'Especialista en cortes modernos, degradados y dise&ntilde;os, con 5 a&ntilde;os de experiencia.',
+    services: [
+      { name: 'Corte degradado', price: 10000, time: '35 min' },
+      { name: 'Corte de cabello', price: 8000, time: '30 min' },
+      { name: 'Barba + Cejas', price: 6000, time: '25 min' },
+      { name: 'Diseño creativo', price: 12000, time: '45 min' },
+    ],
+    schedule: ['10:00','10:30','11:00','11:30','12:00','12:30','13:00','14:00','15:00','16:00','17:00','17:30','18:00','18:30','19:00'],
+  },
+};
+
+const barberIds = Object.keys(barbers);
+let selectedBarber = barberIds[0];
 
 const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const dayLabels = ['DOM','LUN','MAR','MIE','JUE','VIE','SAB'];
-
-const times = [
-  '09:30','10:00','10:30','11:00','11:30','12:00','12:30',
-  '17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30',
-];
 
 let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
@@ -74,15 +100,14 @@ function saveUser(u) { localStorage.setItem(USER_KEY, JSON.stringify(u)); }
 function clearUser() { localStorage.removeItem(USER_KEY); }
 
 function isBlocked(dateStr, timeStr) {
-  return getBlocks().some(b => b.date === dateStr && b.time === timeStr);
+  return getBlocks().some(b => b.date === dateStr && (b.time === timeStr || b.time === ''));
 }
 
-// LOGIN CLIENTE
+// LOGIN
 const loginCliente = $('#loginCliente');
 const cliName = $('#cliName');
 const cliPhone = $('#cliPhone');
 const cliLoginBtn = $('#cliLoginBtn');
-
 const loginAdmin = $('#loginAdmin');
 const adminPin = $('#adminPin');
 const adminError = $('#adminError');
@@ -91,9 +116,7 @@ const adminLoginBtn = $('#adminLoginBtn');
 $('#gotoAdminLink').addEventListener('click', () => {
   loginCliente.style.display = 'none';
   loginAdmin.style.display = 'flex';
-  adminPin.value = '';
-  adminError.textContent = '';
-  adminPin.focus();
+  adminPin.value = ''; adminError.textContent = ''; adminPin.focus();
 });
 
 $('#gotoClienteLink').addEventListener('click', () => {
@@ -123,8 +146,7 @@ adminLoginBtn.addEventListener('click', () => {
     document.querySelector('.navbar').scrollIntoView();
   } else {
     adminError.textContent = 'PIN incorrecto';
-    adminPin.value = '';
-    adminPin.focus();
+    adminPin.value = ''; adminPin.focus();
   }
 });
 
@@ -138,10 +160,7 @@ if (currentUser) {
   updateBadge();
 }
 onDataReady(() => {
-  if (currentUser) {
-    renderMyAppts();
-    checkToday();
-  }
+  if (currentUser) { renderMyAppts(); checkToday(); }
   renderTimes();
 });
 
@@ -158,8 +177,7 @@ $('#logoutBtn').addEventListener('click', () => {
   clearUser(); currentUser = null; updateBadge();
   renderMyAppts(); checkToday();
   loginCliente.style.display = 'flex';
-  cliName.value = ''; cliPhone.value = '';
-  cliName.focus();
+  cliName.value = ''; cliPhone.value = ''; cliName.focus();
 });
 
 // MENU
@@ -172,22 +190,78 @@ $$('#navLinks a').forEach(l => l.addEventListener('click', () => {
   $('#navLinks').classList.remove('open');
 }));
 
-// SERVICES
-const servicesGrid = $('#servicesGrid');
-services.forEach((s, idx) => {
-  const card = document.createElement('div');
-  card.className = 'service-card' + (idx === 0 ? ' selected-service' : '');
-  card.dataset.index = idx;
-  const priceText = s.price ? `$${s.price.toLocaleString('es-AR')}` : 'Consultar';
-card.innerHTML = `<h3>${s.name}</h3><p class="price">${priceText}</p><p class="duration">${s.time}</p>`;
-  card.addEventListener('click', () => {
-    $$('.service-card').forEach(c => c.classList.remove('selected-service'));
-    card.classList.add('selected-service');
+// ===================== BARBEROS GRID =====================
+function renderBarberosGrid() {
+  const grid = $('#barberosGrid');
+  grid.innerHTML = '';
+  barberIds.forEach(id => {
+    const b = barbers[id];
+    const card = document.createElement('div');
+    card.className = 'barbero-card' + (id === selectedBarber ? ' active' : '');
+    card.innerHTML = `
+      <div class="barbero-photo" style="background-image:url('${b.photo}')"></div>
+      <h3>${b.name}</h3>
+      <div class="barbero-role">${b.role}</div>
+      <div class="barbero-rating">★ ${b.rating} · ${b.reviews} reseñas</div>
+      <div class="barbero-desc">${b.desc}</div>
+    `;
+    card.addEventListener('click', () => {
+      selectedBarber = id;
+      $$('.barbero-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      renderServices();
+      renderBarberSelect();
+      selectedTime = null;
+      renderTimes();
+    });
+    grid.appendChild(card);
   });
-  servicesGrid.appendChild(card);
-});
+}
+renderBarberosGrid();
 
-// CALENDAR
+// ===================== SERVICES =====================
+function renderServices() {
+  const grid = $('#servicesGrid');
+  const b = barbers[selectedBarber];
+  $('#serviciosTitle').textContent = `Servicios de ${b.name}`;
+  grid.innerHTML = '';
+  b.services.forEach((s, idx) => {
+    const card = document.createElement('div');
+    card.className = 'service-card' + (idx === 0 ? ' selected-service' : '');
+    card.dataset.index = idx;
+    const priceText = s.price ? `$${s.price.toLocaleString('es-AR')}` : 'Consultar';
+    card.innerHTML = `<h3>${s.name}</h3><p class="price">${priceText}</p><p class="duration">${s.time}</p>`;
+    card.addEventListener('click', () => {
+      $$('.service-card').forEach(c => c.classList.remove('selected-service'));
+      card.classList.add('selected-service');
+    });
+    grid.appendChild(card);
+  });
+}
+renderServices();
+
+// ===================== BARBER SELECT (booking) =====================
+function renderBarberSelect() {
+  const cont = $('#barberSelect');
+  cont.innerHTML = '';
+  barberIds.forEach(id => {
+    const b = barbers[id];
+    const opt = document.createElement('div');
+    opt.className = 'barber-option' + (id === selectedBarber ? ' active' : '');
+    opt.textContent = b.name;
+    opt.addEventListener('click', () => {
+      selectedBarber = id;
+      renderBarberSelect();
+      renderServices();
+      selectedTime = null;
+      renderTimes();
+    });
+    cont.appendChild(opt);
+  });
+}
+renderBarberSelect();
+
+// ===================== CALENDAR =====================
 function getDates() {
   const dim = new Date(currentYear, currentMonth + 1, 0).getDate();
   const d = [];
@@ -216,10 +290,11 @@ function renderMonth() {
 function renderTimes() {
   const tg = $('#time-grid');
   tg.innerHTML = '';
+  const b = barbers[selectedBarber];
   const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(selectedDate || '').padStart(2,'0')}`;
   const appts = getAppts();
-  times.forEach(t => {
-    const blocked = isBlocked(ds, t) || appts.some(a => a.date === ds && a.time === t);
+  b.schedule.forEach(t => {
+    const blocked = isBlocked(ds, t) || appts.some(a => a.barber === selectedBarber && a.date === ds && a.time === t);
     const cell = document.createElement('button');
     cell.className = 'time-cell' + (t === selectedTime ? ' selected' : '') + (blocked ? ' disabled' : '');
     cell.textContent = t;
@@ -229,7 +304,6 @@ function renderTimes() {
 }
 
 renderMonth();
-// renderTimes se llama desde onDataReady para esperar la data del server
 
 $('#prevMonth').addEventListener('click', () => {
   currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
@@ -243,34 +317,36 @@ $('#nextMonth').addEventListener('click', () => {
   selectedDate = null; renderMonth();
 });
 
-// CONFIRM
+// ===================== CONFIRM =====================
 $('#confirmBooking').addEventListener('click', () => {
   if (!currentUser) { $('#bookingConfirm').textContent = 'Primero iniciá sesión'; return; }
   const svc = $('.selected-service');
   if (!svc) { $('#bookingConfirm').textContent = 'Seleccioná un servicio'; return; }
   if (!selectedDate || !selectedTime) { $('#bookingConfirm').textContent = 'Seleccioná fecha y hora'; return; }
 
-  const s = services[parseInt(svc.dataset.index)];
+  const b = barbers[selectedBarber];
+  const s = b.services[parseInt(svc.dataset.index)];
   const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(selectedDate).padStart(2,'0')}`;
   const list = getAppts();
 
-  if (list.find(a => a.date === ds && a.time === selectedTime) || isBlocked(ds, selectedTime)) {
+  if (list.find(a => a.barber === selectedBarber && a.date === ds && a.time === selectedTime) || isBlocked(ds, selectedTime)) {
     $('#bookingConfirm').textContent = 'Ese horario no está disponible';
     return;
   }
 
   list.push({
-    id: Date.now(), userName: currentUser.name, userPhone: currentUser.phone,
+    id: Date.now(), barber: selectedBarber, barberName: b.name,
+    userName: currentUser.name, userPhone: currentUser.phone,
     service: s.name, price: s.price, date: ds, time: selectedTime,
     status: 'pendiente', createdAt: new Date().toISOString(),
   });
   saveAppts(list);
-  $('#bookingConfirm').textContent = `Turno confirmado: ${s.name} — ${selectedDate}/${currentMonth+1} a las ${selectedTime}`;
+  $('#bookingConfirm').textContent = `Turno confirmado con ${b.name}: ${s.name} — ${selectedDate}/${currentMonth+1} a las ${selectedTime}`;
   renderTimes();
   renderMyAppts(); checkToday();
 });
 
-// MIS TURNOS
+// ===================== MIS TURNOS =====================
 function renderMyAppts() {
   const c = $('#myAppointments');
   if (!currentUser) { c.innerHTML = '<div class="appt-empty">Iniciá sesión para ver tus turnos.</div>'; return; }
@@ -287,7 +363,7 @@ function renderMyAppts() {
       <div class="appt-card-left">
         <div class="appt-card-date">${p[2]}/${p[1]}/${p[0]}${isT ? '<span class="badge-today">Hoy</span>' : ''}</div>
         <div class="appt-card-service">${a.service}</div>
-        <div class="appt-card-time">🕐 ${a.time} — ${a.status}</div>
+        <div class="appt-card-time">✂️ ${a.barberName} · 🕐 ${a.time} — ${a.status}</div>
       </div>
       <div class="appt-actions">
         <button class="btn-sm cancel-btn" data-id="${a.id}">Cancelar</button>
@@ -300,11 +376,10 @@ function renderMyAppts() {
     let l = getAppts();
     l = l.filter(x => x.id !== parseInt(b.dataset.id));
     saveAppts(l);
-    renderMyAppts();
-    renderTimes();
-    checkToday();
+    renderMyAppts(); renderTimes(); checkToday();
   }));
 }
+
 // TODAY ALERT
 function checkToday() {
   if (!currentUser) { $('#todayAlert').style.display = 'none'; return; }
@@ -312,7 +387,7 @@ function checkToday() {
   const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const t = getAppts().filter(a => a.userPhone === currentUser.phone && a.date === today);
   if (t.length) {
-    $('#todayAlertText').textContent = ` Tenés turno hoy a las ${t[0].time} — ${t[0].service}`;
+    $('#todayAlertText').textContent = ` Tenés turno hoy a las ${t[0].time} con ${t[0].barberName} — ${t[0].service}`;
     $('#todayAlert').style.display = '';
     tryNotify(t[0]);
   } else {
@@ -324,18 +399,17 @@ $('#todayAlertClose').addEventListener('click', () => $('#todayAlert').style.dis
 
 function tryNotify(a) {
   if (!('Notification' in window)) return;
-  if (Notification.permission === 'granted') new Notification('Modo Urbano', { body: `Turno hoy a las ${a.time} — ${a.service}`, icon: 'logo.jpeg' });
+  if (Notification.permission === 'granted') new Notification('Modo Urbano', { body: `Turno hoy a las ${a.time} con ${a.barberName} — ${a.service}`, icon: 'logo.jpeg' });
   else if (Notification.permission !== 'denied') Notification.requestPermission();
 }
 
-// ADMIN
+// ===================== ADMIN =====================
 $('#adminLogoutBtn').addEventListener('click', () => { $('#admin-section').style.display = 'none'; loginAdmin.style.display = 'flex'; adminPin.value = ''; adminError.textContent = ''; adminPin.focus(); });
 
 $('#adminAllBtn').addEventListener('click', () => { adminFilter = 'all'; renderAdminTab(); });
 $('#adminPendingBtn').addEventListener('click', () => { adminFilter = 'pending'; renderAdminTab(); });
 $('#adminTodayBtn').addEventListener('click', () => { adminFilter = 'today'; renderAdminTab(); });
 
-// TABS
 let adminTab = 'reservas';
 $('#adminReservasTab').addEventListener('click', () => { adminTab = 'reservas'; renderAdminTab(); });
 $('#adminBloqueosTab').addEventListener('click', () => { adminTab = 'bloqueos'; renderAdminTab(); });
@@ -354,11 +428,11 @@ function renderAdmin() {
   if (adminFilter === 'today') all = all.filter(a => a.date === today);
   all.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
   if (!all.length) { c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim)">No hay reservas</div>'; return; }
-  let h = '<div class="admin-table"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Fecha</th><th>Hora</th><th>Estado</th><th></th></tr></thead><tbody>';
+  let h = '<div class="admin-table"><table><thead><tr><th>Barbero</th><th>Cliente</th><th>Teléfono</th><th>Servicio</th><th>Fecha</th><th>Hora</th><th>Estado</th><th></th></tr></thead><tbody>';
   all.forEach(a => {
     const p = a.date.split('-');
     const isT = a.date === today;
-    h += `<tr><td><strong>${a.userName}</strong></td><td>${a.userPhone}</td><td>${a.service}</td><td>${p[2]}/${p[1]}/${p[0]}${isT ? ' <span style="color:var(--cream);font-size:11px">HOY</span>' : ''}</td><td>${a.time}</td><td><span class="status-badge ${a.status}">${a.status}</span></td><td class="admin-actions">${a.status === 'pendiente' ? `<button class="complete-btn" data-id="${a.id}">Completar</button>` : ''}<button class="danger delete-btn" data-id="${a.id}">Eliminar</button></td></tr>`;
+    h += `<tr><td><strong>${a.barberName || '—'}</strong></td><td>${a.userName}</td><td>${a.userPhone}</td><td>${a.service}</td><td>${p[2]}/${p[1]}/${p[0]}${isT ? ' <span style="color:var(--cream);font-size:11px">HOY</span>' : ''}</td><td>${a.time}</td><td><span class="status-badge ${a.status}">${a.status}</span></td><td class="admin-actions">${a.status === 'pendiente' ? `<button class="complete-btn" data-id="${a.id}">Completar</button>` : ''}<button class="danger delete-btn" data-id="${a.id}">Eliminar</button></td></tr>`;
   });
   c.innerHTML = h + '</tbody></table></div>';
   c.querySelectorAll('.complete-btn').forEach(b => b.addEventListener('click', () => { const l = getAppts(); const x = l.find(z => z.id === parseInt(b.dataset.id)); if (x) x.status = 'completado'; saveAppts(l); renderAdmin(); renderMyAppts(); }));
@@ -372,9 +446,11 @@ function renderAdminBlocks() {
   h += `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
     <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Fecha</label><input type="date" id="blockDate" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px" /></div>
     <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Hora</label><select id="blockTime" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px"><option value="">Todo el día</option>`;
-  times.forEach(t => { h += `<option value="${t}">${t}</option>`; });
+  // collect all times from all barbers
+  const allTimes = [...new Set(Object.values(barbers).flatMap(b => b.schedule))].sort();
+  allTimes.forEach(t => { h += `<option value="${t}">${t}</option>`; });
   h += `</select></div>
-    <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Motivo (opcional)</label><input type="text" id="blockReason" placeholder="Ej: feriado" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px" /></div>
+    <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Motivo</label><input type="text" id="blockReason" placeholder="Ej: feriado" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px" /></div>
     <div><button class="btn btn-primary" id="addBlockBtn">Bloquear</button></div>
   </div></div>`;
 
