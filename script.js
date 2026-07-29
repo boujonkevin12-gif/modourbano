@@ -39,6 +39,14 @@ async function pushToServer() {
 
 syncFromServer();
 
+function showServiciosSection() {
+  $('#servicios').style.display = 'block';
+}
+
+function scrollToServicios() {
+  $('#servicios').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 // ===================== BARBERS =====================
 const barbers = {
   milton: {
@@ -209,10 +217,12 @@ function renderBarberosGrid() {
       selectedBarber = id;
       $$('.barbero-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
+      showServiciosSection();
       renderServices();
       renderBarberSelect();
       selectedTime = null;
       renderTimes();
+      scrollToServicios();
     });
     grid.appendChild(card);
   });
@@ -238,7 +248,6 @@ function renderServices() {
     grid.appendChild(card);
   });
 }
-renderServices();
 
 // ===================== BARBER SELECT (booking) =====================
 function renderBarberSelect() {
