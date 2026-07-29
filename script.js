@@ -436,17 +436,6 @@ function tryNotify(a) {
 }
 
 // ===================== ADMIN =====================
-$('#adminLogoutBtn').addEventListener('click', () => {
-  $('#admin-section').style.display = 'none';
-  loginAdmin.style.display = 'flex';
-  currentAdmin = null;
-  adminUser.value = ''; adminPin.value = ''; adminError.textContent = ''; adminUser.focus();
-});
-
-$('#adminAllBtn').addEventListener('click', () => { adminFilter = 'all'; renderAdmin(); });
-$('#adminPendingBtn').addEventListener('click', () => { adminFilter = 'pending'; renderAdmin(); });
-$('#adminTodayBtn').addEventListener('click', () => { adminFilter = 'today'; renderAdmin(); });
-
 $('#adminReservasTab').addEventListener('click', () => { adminTab = 'reservas'; renderAdmin(); });
 $('#adminBloqueosTab').addEventListener('click', () => { adminTab = 'bloqueos'; renderAdmin(); });
 
@@ -556,6 +545,14 @@ function renderAdminBlocks() {
     renderAdminBlocks();
     renderTimes();
   });
+  c.querySelectorAll('.unblock-btn').forEach(b => b.addEventListener('click', () => {
+    if (!confirm('Desbloquear?')) return;
+    let list = getBlocks();
+    list = list.filter(x => x.id !== parseInt(b.dataset.id));
+    saveBlocks(list);
+    renderAdminBlocks();
+    renderTimes();
+  }));
   $('#adminLogoutBtn').addEventListener('click', () => {
     $('#admin-section').style.display = 'none';
     loginAdmin.style.display = 'flex';
