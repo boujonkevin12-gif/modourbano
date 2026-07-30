@@ -82,6 +82,9 @@ const barbers = {
     ],
     closedDays: [0, 3],
     schedule: ['17:30','18:00','18:30','19:00','19:30','20:00','20:30'],
+    specialSchedules: {
+      5: ['09:30','10:00','10:30','11:00','11:30','12:00','12:30','17:30','18:00','18:30','19:00','19:30','20:00','20:30'],
+    },
   },
 };
 
@@ -332,9 +335,10 @@ function renderTimes() {
   const tg = $('#time-grid');
   tg.innerHTML = '';
   const b = barbers[selectedBarber];
+  const schedule = selectedDate ? (b.specialSchedules && b.specialSchedules[new Date(currentYear, currentMonth, selectedDate).getDay()]) || b.schedule : b.schedule;
   const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(selectedDate || '').padStart(2,'0')}`;
   const appts = getAppts();
-  b.schedule.forEach(t => {
+  schedule.forEach(t => {
     const blocked = isBlocked(ds, t, selectedBarber) || appts.some(a => a.barber === selectedBarber && a.date === ds && a.time === t);
     const cell = document.createElement('button');
     cell.className = 'time-cell' + (t === selectedTime ? ' selected' : '') + (blocked ? ' disabled' : '');
@@ -525,7 +529,8 @@ function renderAdminBlocks() {
   h += `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
     <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Fecha</label><input type="date" id="blockDate" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px" /></div>
     <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Hora</label><select id="blockTime" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px"><option value="">Todo el día</option>`;
-  b.schedule.forEach(t => { h += `<option value="${t}">${t}</option>`; });
+  const allHours = [...new Set([...b.schedule, ...Object.values(b.specialSchedules || {}).flat()])].sort();
+  allHours.forEach(t => { h += `<option value="${t}">${t}</option>`; });
   h += `</select></div>
     <div><label style="font-size:12px;color:#999;display:block;margin-bottom:4px">Motivo</label><input type="text" id="blockReason" placeholder="Ej: feriado" style="background:#24262b;border:1px solid #333;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px" /></div>
     <div><button class="btn btn-primary" id="addBlockBtn">Bloquear</button></div>
