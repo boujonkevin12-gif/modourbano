@@ -307,10 +307,19 @@ function renderMonth() {
   const dates = getDates();
   const b = barbers[selectedBarber];
   const closedDays = b.closedDays || [0];
-  if (selectedDate === null) { const f = dates.find(x => !(x.closed || closedDays.includes(x.dayOfWeek))); selectedDate = f ? f.day : null; }
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  if (selectedDate === null) {
+    const f = dates.find(x => {
+      const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(x.day).padStart(2,'0')}`;
+      return !(x.closed || closedDays.includes(x.dayOfWeek) || ds < todayStr);
+    });
+    selectedDate = f ? f.day : null;
+  }
   dateGrid.innerHTML = '';
   dates.forEach(d => {
-    const closed = d.closed || closedDays.includes(d.dayOfWeek);
+    const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d.day).padStart(2,'0')}`;
+    const closed = d.closed || closedDays.includes(d.dayOfWeek) || ds < todayStr;
     const cell = document.createElement('button');
     cell.className = 'date-cell' + (d.day === selectedDate ? ' selected' : '') + (closed ? ' disabled' : '');
     cell.innerHTML = `<span class="num">${d.day}</span><span class="lbl">${d.label}</span>`;
@@ -359,6 +368,9 @@ $('#confirmBooking').addEventListener('click', () => {
   const b = barbers[selectedBarber];
   const s = b.services[parseInt(svc.dataset.index)];
   const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(selectedDate).padStart(2,'0')}`;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  if (ds < todayStr) { $('#bookingConfirm').textContent = 'No podés reservar en una fecha pasada'; return; }
   const list = getAppts();
 
   if (list.find(a => a.barber === selectedBarber && a.date === ds && a.time === selectedTime) || isBlocked(ds, selectedTime, selectedBarber)) {
